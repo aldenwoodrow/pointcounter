@@ -7,11 +7,9 @@ import freesans20
 import writer
 from time import sleep
 
-
 import lowpower
 
-
-# Initialize SPI and OLED as previously done
+# Initialize SPI and OLED
 spi = SPI(1, baudrate=2000000, sck=Pin(10), mosi=Pin(11))
 cs = Pin(9, Pin.OUT)
 dc = Pin(8, Pin.OUT)
@@ -23,24 +21,24 @@ oled = sh1107.SH1107_SPI(128, 64, spi, dc, rst, cs)
 button1 = Pin(17, Pin.IN, Pin.PULL_UP) 
 button2 = Pin(15, Pin.IN, Pin.PULL_UP)
 
-
+#identify pins for display button
 DORMANT_PIN1 = 17
 DORMANT_PIN2 = 15
 
-
+#save the current count to a text file on device; if no text file, set count to zero
 try:
     with open('pcount.txt', 'r') as f:
         pCount = int(f.read())
 except OSError:
     pCount = 0
 
-
+#load current count from text file
 def save_pcount():
     with open('pcount.txt', 'w') as f:
         f.write(str(pCount))
 
 
-# Timer variable
+# Timer variable to put device to sleep
 timer = 0
 display_on = False
 print("running")
@@ -49,10 +47,7 @@ print("running")
 # Initialize last_button_check
 last_button_check = utime.ticks_ms()
 
-
-#from https://javl.github.io/image2cpp/
-
-
+#pixel image, turned from a bitmap into a bytearray using https://javl.github.io/image2cpp/
 byte_array = bytearray([
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x01, 0x00, 0x00, 0x00, 
         0x00, 0x00, 0x00, 0xc0, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x06, 0x00, 0x00, 0x00, 
@@ -88,15 +83,13 @@ byte_array = bytearray([
         0x00, 0x00, 0x00, 0x80, 0x01, 0x00, 0x00, 0x00
 ])
 
-
+#show the pixel image on the left side of the screen
 def display_image(byte_array):
     img_width = 62  # width of the image in pixels
     img_height = 62  # height of the image in pixels
     bytes_per_row = math.ceil(img_width / 8)
 
-
     oled.fill(0)  # Clear the display
-
 
     for y in range(img_height):
         for x in range(img_width):
@@ -104,18 +97,15 @@ def display_image(byte_array):
             byte_index = x // 8 + y * bytes_per_row
             bit_index = x % 8
 
-
             # Set the pixel if the corresponding bit is 1
             if byte_array[byte_index] & (1 << bit_index):
                 oled.pixel(x, y, 1)
 
-
     # Update the display to show the image
     oled.show()
 
-
+#show the count on the right side of the screen
 def display_text():
-
 
     # Display text to the right of the image
     title = "Points"
@@ -124,14 +114,11 @@ def display_text():
     title_width = len(title) * char_width
     x_start_title = 64 + ((display_width - title_width) // 2)  # Calculate starting x position
 
-
     oled.text(title, x_start_title, 15, 1)  # Display title
-
 
     # Display text to the right of the image
     char_width = 8  # Width of each character in pixels
     display_width = 128 - 64  # Adjust width for the text area
-
 
     # Center-align pCount
     pCount_str = str(pCount)
@@ -142,12 +129,11 @@ def display_text():
     font_writer.set_textpos(85, 25)
     font_writer.printstring(pCount_str)
 
-
     #oled.text(pCount_str, x_start_pCount, 30, 1)  # Display pCount
-
 
 oled.poweron()
 
+#wake up / increment count
 
 while True:
     # Check if button 1 is pressed
@@ -159,8 +145,6 @@ while True:
             display_text()
             oled.show()
             timer = 0
-
-
         else:
             # If the display is off, toggle it on and increment pCount
             oled.poweron()
@@ -171,8 +155,6 @@ while True:
             timer = 0
             
         utime.sleep(0.2)  # Debounce delay
-    
-
 
     # Check if button 2 is pressed
     if not button2.value():
@@ -183,7 +165,6 @@ while True:
             display_text()
             oled.show()
             timer = 0
- 
         else:
             # If the display is off, toggle it on and increment pCount
             oled.poweron()
@@ -198,7 +179,6 @@ while True:
     # Increment the timer
     timer += utime.ticks_diff(utime.ticks_ms(), last_button_check)
 
-
     # Check if the timer exceeds 20 seconds
     if timer >= 10000:
         # Put the Pico into deep sleep
@@ -210,8 +190,6 @@ while True:
         oled.poweron()
         display_on = True
         timer = 0
-
-
     
     # Store the timestamp of the last button check
     last_button_check = utime.ticks_ms()
