@@ -1,13 +1,16 @@
 ﻿from machine import Pin, SPI
 import sh1107
+#https://github.com/peter-l5/SH1107
 import utime
 import math
 import framebuf
 import freesans20
 import writer
+#https://github.com/peterhinch/micropython-font-to-py
 from time import sleep
 
 import lowpower
+# https://github.com/tomjorquera/pico-micropython-lowpower-workaround
 
 # Initialize SPI and OLED
 spi = SPI(1, baudrate=2000000, sck=Pin(10), mosi=Pin(11))
